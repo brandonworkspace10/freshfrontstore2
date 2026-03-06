@@ -1,3 +1,17 @@
+// Pre-qualification data from freshfrontnyc.com — used to pre-fill onboarding
+export const mockQualifiedLead = {
+  businessName: "Metro Cuts Barbershop",
+  businessAddress: "248 W 125th St",
+  borough: "Manhattan",
+  businessType: "Barbershop",
+  contactName: "Marcus Rivera",
+  phone: "(212) 555-0192",
+  email: "marcus@metrocutsbarbershop.com",
+  preferredContact: "Text",
+  qualifiedAt: "March 5, 2026",
+  approvedBy: "Carlos F.",
+};
+
 export const mockUser = {
   id: "usr_001",
   name: "Marcus Rivera",

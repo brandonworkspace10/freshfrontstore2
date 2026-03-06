@@ -1,17 +1,24 @@
 "use client";
 
 import { createContext, useContext, useState } from "react";
+import { mockQualifiedLead } from "@/lib/mock-data";
 
-interface OnboardingData {
-  plan: string;
-  planPrice: number | null;
-  frequency: string;
+export interface OnboardingData {
+  // Step 2 — Verify
   businessName: string;
   businessAddress: string;
   borough: string;
   businessType: string;
+  contactName: string;
   phone: string;
+  email: string;
   preferredContact: string;
+  // Step 3 — Plan
+  plan: string;
+  planId: string;
+  planPrice: number | null;
+  frequency: string;
+  // Step 4 — Payment
   promoCode: string;
   agreedToTerms: boolean;
 }
@@ -23,34 +30,36 @@ interface OnboardingContextType {
   setStep: (step: number) => void;
 }
 
-const defaultData: OnboardingData = {
-  plan: "",
-  planPrice: null,
-  frequency: "monthly",
-  businessName: "",
-  businessAddress: "",
-  borough: "",
-  businessType: "",
-  phone: "",
-  preferredContact: "Text",
-  promoCode: "",
-  agreedToTerms: false,
-};
-
 const OnboardingContext = createContext<OnboardingContextType | null>(null);
 
 export function OnboardingProvider({ children }: { children: React.ReactNode }) {
-  const [data, setData] = useState<OnboardingData>(defaultData);
   const [currentStep, setCurrentStep] = useState(1);
+  const [data, setData] = useState<OnboardingData>({
+    // Pre-filled from qualification
+    businessName: mockQualifiedLead.businessName,
+    businessAddress: mockQualifiedLead.businessAddress,
+    borough: mockQualifiedLead.borough,
+    businessType: mockQualifiedLead.businessType,
+    contactName: mockQualifiedLead.contactName,
+    phone: mockQualifiedLead.phone,
+    email: mockQualifiedLead.email,
+    preferredContact: mockQualifiedLead.preferredContact,
+    // Plan (empty until step 3)
+    plan: "",
+    planId: "",
+    planPrice: null,
+    frequency: "monthly",
+    // Payment
+    promoCode: "",
+    agreedToTerms: false,
+  });
 
   const updateData = (updates: Partial<OnboardingData>) => {
     setData((prev) => ({ ...prev, ...updates }));
   };
 
-  const setStep = (step: number) => setCurrentStep(step);
-
   return (
-    <OnboardingContext.Provider value={{ data, updateData, currentStep, setStep }}>
+    <OnboardingContext.Provider value={{ data, updateData, currentStep, setStep: setCurrentStep }}>
       {children}
     </OnboardingContext.Provider>
   );

@@ -138,6 +138,28 @@
   animation: shimmer 1.5s infinite;
 }
 
+/* ─── Form input base ─── */
+.input-base {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.75rem;
+  border: 1px solid #D9EAFF;
+  background: #F8FBFF;
+  font-size: 0.875rem;
+  color: #1e293b;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  appearance: none;
+}
+.input-base:focus {
+  border-color: #3A9AFF;
+  box-shadow: 0 0 0 3px rgba(58,154,255,0.12);
+  background: #fff;
+}
+.input-base:hover:not(:focus) {
+  border-color: #B3D3FF;
+}
+
 /* ─── Blue glow utility for buttons ─── */
 .btn-blue-glow {
   box-shadow: 0 4px 14px 0 oklch(0.660 0.195 243 / 35%);

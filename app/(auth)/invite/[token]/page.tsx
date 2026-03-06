@@ -28,7 +28,7 @@ export default function InvitePage({ params }: InvitePageProps) {
   }, [token]);
 
   const handleAccept = () => {
-    router.push("/onboarding/plan");
+    router.push("/onboarding/welcome");
   };
 
   if (status === "loading") {

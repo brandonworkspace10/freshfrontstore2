@@ -1,222 +1,244 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, CreditCard, Lock, Tag, ChevronRight, Loader2 } from "lucide-react";
+import { ArrowLeft, Lock, CreditCard, ShieldCheck, Tag, CheckCircle2 } from "lucide-react";
+import { useState } from "react";
 import { useOnboarding } from "@/providers/onboarding-provider";
-import { frequencyOptions } from "@/lib/mock-data";
-import { OnboardingProgress } from "../plan/page";
+import { OnboardingProgress } from "@/components/onboarding/progress";
+
+const FREQ_LABELS: Record<string, string> = {
+  monthly: "Monthly",
+  biweekly: "Bi-Weekly",
+  bimonthly: "Bi-Monthly",
+};
 
 export default function PaymentPage() {
   const router = useRouter();
   const { data, updateData } = useOnboarding();
-
-  const [promoCode, setPromoCode] = useState("");
+  const [promoCode, setPromoCode] = useState(data.promoCode);
+  const [agreed, setAgreed] = useState(data.agreedToTerms);
+  const [loading, setLoading] = useState(false);
   const [promoApplied, setPromoApplied] = useState(false);
-  const [promoError, setPromoError] = useState("");
-  const [agreed, setAgreed] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const freq = frequencyOptions.find((f) => f.id === data.frequency);
-  const basePrice = data.planPrice ?? 150;
-  const displayPrice = data.planPrice
-    ? `$${(basePrice * (freq?.multiplier ?? 1)).toFixed(0)}`
-    : "Custom quote";
-  const frequencyLabel = freq?.label ?? "Monthly";
+  const price = data.planPrice ?? 0;
+  const isLargePlan = !data.planPrice;
 
-  const handlePromo = () => {
-    if (promoCode.toUpperCase() === "WELCOME10") {
-      setPromoApplied(true);
-      setPromoError("");
-    } else {
-      setPromoError("Invalid promo code");
-    }
+  const handleApplyPromo = () => {
+    if (promoCode.trim()) setPromoApplied(true);
   };
 
-  const handleComplete = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!agreed) return;
+    setLoading(true);
     updateData({ promoCode, agreedToTerms: agreed });
-    setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 2000));
-    router.push("/onboarding/welcome");
+    await new Promise(r => setTimeout(r, 1400));
+    router.push("/onboarding/done");
   };
 
   return (
     <div className="animate-fade-up">
-      <OnboardingProgress step={3} />
+      <OnboardingProgress step={4} />
 
-      <div className="space-y-2 mb-8">
-        <h1 className="font-display text-3xl font-700 text-gray-900 tracking-tight">
-          Set up payment
-        </h1>
-        <p className="text-gray-500">Secure payment powered by Stripe. Cancel anytime with 7 days notice.</p>
+      <div className="mb-7">
+        <h2 className="font-display text-2xl font-700 text-gray-900 mb-1.5">Almost there</h2>
+        <p className="text-gray-500 text-sm">Set up your payment method to activate your plan.</p>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-5">
-        {/* Payment form */}
-        <div className="lg:col-span-3 space-y-4">
-          {/* Stripe placeholder */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
-            <div className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-1">
-              <CreditCard className="w-4 h-4 text-[#3A9AFF]" />
-              Card details
-            </div>
-
-            <div className="space-y-3">
-              <div className="h-11 rounded-xl border border-gray-200 bg-gray-50 flex items-center px-4">
-                <span className="text-sm text-gray-400">Card number (Stripe integration)</span>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="h-11 rounded-xl border border-gray-200 bg-gray-50 flex items-center px-4">
-                  <span className="text-sm text-gray-400">MM / YY</span>
-                </div>
-                <div className="h-11 rounded-xl border border-gray-200 bg-gray-50 flex items-center px-4">
-                  <span className="text-sm text-gray-400">CVC</span>
-                </div>
-              </div>
-              <div className="h-11 rounded-xl border border-gray-200 bg-gray-50 flex items-center px-4">
-                <span className="text-sm text-gray-400">Name on card</span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-1.5 text-xs text-gray-400 pt-1">
-              <Lock className="w-3 h-3" />
-              Payments secured by Stripe
-            </div>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Order summary */}
+        <div
+          className="bg-white rounded-2xl p-5"
+          style={{ border: "1px solid #D9EAFF", boxShadow: "0 2px 16px rgba(58,154,255,0.06)" }}
+        >
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-xs font-bold uppercase tracking-widest text-[#3A9AFF]">Order Summary</span>
+            <div className="flex-1 h-px bg-[#E2EEFF]" />
           </div>
 
-          {/* Promo code */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <div className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
-              <Tag className="w-4 h-4 text-[#3A9AFF]" />
-              Promo code
-            </div>
-            {promoApplied ? (
-              <div className="flex items-center gap-2 text-sm text-[#3A9AFF] font-medium bg-[#EEF5FF] rounded-xl px-4 py-2.5">
-                ✓ WELCOME10 applied — 10% off first month
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={promoCode}
-                  onChange={(e) => {
-                    setPromoCode(e.target.value.toUpperCase());
-                    setPromoError("");
-                  }}
-                  placeholder="Enter code"
-                  className="flex-1 px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#3A9AFF]/30 focus:border-[#3A9AFF] transition-all uppercase"
-                />
-                <button
-                  type="button"
-                  onClick={handlePromo}
-                  className="px-4 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-sm font-medium text-gray-700 transition-all"
-                >
-                  Apply
-                </button>
+          <div className="space-y-2.5">
+            <Row label="Plan" value={data.plan || "—"} />
+            <Row label="Frequency" value={FREQ_LABELS[data.frequency] || data.frequency} />
+            {!isLargePlan && (
+              <>
+                <Row label="Monthly amount" value={`$${price}/month`} bold />
+                <Row label="Per day" value={`~$${(price / 30.4).toFixed(2)}/day`} muted />
+                <div className="border-t border-[#E2EEFF] pt-2.5 mt-1">
+                  <Row label="Due today" value={`$${price}.00`} bold highlight />
+                </div>
+              </>
+            )}
+            {isLargePlan && (
+              <div className="mt-2 p-3 rounded-xl text-sm text-[#1A7EF5] font-medium" style={{ background: "#EEF5FF", border: "1px solid #C5DCFF" }}>
+                Your custom quote will be confirmed by our team within 24 hours.
               </div>
             )}
-            {promoError && <p className="text-xs text-red-500 mt-1.5">{promoError}</p>}
           </div>
 
-          {/* Terms */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <label className="flex items-start gap-3 cursor-pointer group">
-              <div className="relative mt-0.5">
-                <input
-                  type="checkbox"
-                  checked={agreed}
-                  onChange={(e) => setAgreed(e.target.checked)}
-                  className="sr-only"
-                />
-                <div
-                  className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
-                    agreed ? "bg-[#3A9AFF] border-[#3A9AFF]" : "border-gray-300 group-hover:border-[#3A9AFF]/50"
-                  }`}
-                >
-                  {agreed && (
-                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </div>
-              </div>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                I agree to FreshFront&apos;s{" "}
-                <span className="text-[#3A9AFF] font-medium underline cursor-pointer">terms of service</span>{" "}
-                including the 7-day cancellation policy.
-              </p>
-            </label>
+          {promoApplied && (
+            <div className="flex items-center gap-2 mt-3 p-2.5 rounded-xl text-xs font-semibold text-green-700" style={{ background: "#F0FDF4", border: "1px solid #BBF7D0" }}>
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              Promo code applied!
+            </div>
+          )}
+        </div>
+
+        {/* Promo code */}
+        <div
+          className="bg-white rounded-2xl p-4"
+          style={{ border: "1px solid #D9EAFF" }}
+        >
+          <label className="text-xs font-semibold text-gray-700 flex items-center gap-1.5 mb-2">
+            <Tag className="w-3.5 h-3.5 text-[#3A9AFF]" />
+            Promo Code
+          </label>
+          <div className="flex gap-2">
+            <input
+              className="input-base flex-1"
+              placeholder="Enter code (optional)"
+              value={promoCode}
+              onChange={e => setPromoCode(e.target.value)}
+            />
+            <button
+              type="button"
+              onClick={handleApplyPromo}
+              className="px-4 py-2.5 rounded-xl text-sm font-semibold border border-[#D9EAFF] text-[#3A9AFF] hover:bg-[#EEF5FF] transition-all"
+            >
+              Apply
+            </button>
           </div>
         </div>
 
-        {/* Order summary */}
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4 sticky top-6">
-            <h3 className="font-semibold text-gray-900 text-sm">Order summary</h3>
+        {/* Payment card placeholder */}
+        <div
+          className="bg-white rounded-2xl p-5 space-y-4"
+          style={{ border: "1px solid #D9EAFF", boxShadow: "0 2px 16px rgba(58,154,255,0.06)" }}
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xs font-bold uppercase tracking-widest text-[#3A9AFF]">Payment Method</span>
+            <div className="flex-1 h-px bg-[#E2EEFF]" />
+            <Lock className="w-3 h-3 text-gray-400" />
+          </div>
 
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">{data.plan || "Service Plan"}</span>
-                <span className="font-semibold text-gray-900">{displayPrice}/mo</span>
-              </div>
-              <div className="flex justify-between text-gray-500">
-                <span>Frequency</span>
-                <span>{frequencyLabel}</span>
-              </div>
-              {data.businessName && (
-                <div className="flex justify-between text-gray-500">
-                  <span>Business</span>
-                  <span className="text-right max-w-28 truncate">{data.businessName}</span>
-                </div>
-              )}
-              {promoApplied && (
-                <div className="flex justify-between text-[#3A9AFF] font-medium">
-                  <span>Promo (WELCOME10)</span>
-                  <span>−10%</span>
-                </div>
-              )}
+          {/* Mock Stripe card UI */}
+          <div>
+            <label className="text-xs font-semibold text-gray-700 block mb-1.5">Card number</label>
+            <div className="input-base flex items-center gap-2" style={{ cursor: "not-allowed", opacity: 0.7 }}>
+              <CreditCard className="w-4 h-4 text-gray-400" />
+              <span className="text-gray-400 text-sm">•••• •••• •••• ••••</span>
             </div>
-
-            <div className="border-t border-gray-100 pt-3 flex justify-between font-semibold text-gray-900">
-              <span>Due today</span>
-              <span className="font-display text-xl text-[#3A9AFF]">{displayPrice}</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-semibold text-gray-700 block mb-1.5">Expiry</label>
+              <div className="input-base text-gray-400 text-sm" style={{ cursor: "not-allowed", opacity: 0.7 }}>MM / YY</div>
             </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-700 block mb-1.5">CVC</label>
+              <div className="input-base text-gray-400 text-sm" style={{ cursor: "not-allowed", opacity: 0.7 }}>•••</div>
+            </div>
+          </div>
 
-            <p className="text-xs text-gray-400 text-center">
-              Billed {frequencyLabel.toLowerCase()} · Cancel anytime
+          <div
+            className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
+            style={{ background: "#F8FBFF", border: "1px solid #E2EEFF" }}
+          >
+            <ShieldCheck className="w-4 h-4 text-[#3A9AFF] flex-shrink-0" />
+            <p className="text-xs text-gray-500">
+              Payments are secured by <span className="font-semibold text-gray-700">Stripe</span>. FreshFront never stores your card details.
             </p>
           </div>
         </div>
-      </div>
 
-      <div className="flex gap-3 mt-6">
-        <button
-          type="button"
-          onClick={() => router.push("/onboarding/business")}
-          className="flex items-center gap-1.5 px-5 py-3 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm font-medium transition-all"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          Back
-        </button>
-        <button
-          type="button"
-          onClick={handleComplete}
-          disabled={!agreed || isSubmitting}
-          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-[#3A9AFF] hover:bg-[#1A7EF5] text-white font-semibold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Setting up your account...
-            </>
-          ) : (
-            <>
-              Complete Setup
-              <ChevronRight className="w-4 h-4" />
-            </>
-          )}
-        </button>
-      </div>
+        {/* Terms */}
+        <label className="flex items-start gap-3 cursor-pointer group">
+          <div
+            className="w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all"
+            style={agreed ? {
+              background: "linear-gradient(135deg, #3A9AFF, #1A7EF5)",
+              borderColor: "#3A9AFF",
+            } : {
+              borderColor: "#D9EAFF",
+              background: "white",
+            }}
+            onClick={() => setAgreed(!agreed)}
+          >
+            {agreed && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
+          </div>
+          <span className="text-xs text-gray-500 leading-relaxed">
+            I agree to FreshFront&apos;s{" "}
+            <span className="text-[#3A9AFF] underline cursor-pointer">terms of service</span>
+            {" "}including the{" "}
+            <span className="font-semibold text-gray-700">7-day cancellation policy</span>.
+            No long-term contracts — cancel anytime with 7 days notice.
+          </span>
+        </label>
+
+        {/* Trust badges */}
+        <div className="flex items-center justify-center gap-6 py-2">
+          {["No contracts", "Cancel anytime", "Secure checkout"].map(t => (
+            <span key={t} className="flex items-center gap-1 text-[11px] text-gray-400 font-medium">
+              <CheckCircle2 className="w-3 h-3 text-[#22C55E]" />
+              {t}
+            </span>
+          ))}
+        </div>
+
+        {/* Nav */}
+        <div className="flex gap-3 pt-1">
+          <button
+            type="button"
+            onClick={() => router.push("/onboarding/plan")}
+            className="flex items-center gap-2 px-5 py-4 rounded-2xl text-sm font-semibold text-gray-600 border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </button>
+          <button
+            type="submit"
+            disabled={!agreed || loading}
+            className="btn-blue-glow flex-1 flex items-center justify-center gap-2.5 py-4 rounded-2xl text-white font-semibold text-base transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ background: "linear-gradient(135deg, #3A9AFF 0%, #1A7EF5 100%)" }}
+          >
+            {loading ? (
+              <>
+                <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                Setting up your account…
+              </>
+            ) : (
+              <>
+                <Lock className="w-4 h-4" />
+                Complete Setup
+              </>
+            )}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function Row({
+  label,
+  value,
+  bold,
+  muted,
+  highlight,
+}: {
+  label: string;
+  value: string;
+  bold?: boolean;
+  muted?: boolean;
+  highlight?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className={`text-sm ${muted ? "text-gray-400" : "text-gray-600"}`}>{label}</span>
+      <span
+        className={`text-sm ${bold ? "font-bold" : "font-medium"} ${highlight ? "text-[#1A7EF5]" : muted ? "text-gray-400" : "text-gray-900"}`}
+      >
+        {value}
+      </span>
     </div>
   );
 }
